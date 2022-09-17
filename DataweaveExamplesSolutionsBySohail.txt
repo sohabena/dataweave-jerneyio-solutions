@@ -366,7 +366,7 @@ payload reduce (ele, acc={}) -> acc ++ ele
 output application/json
 ---
 //[1,2,3,4,5] filter (($ mod 2) == 0) map ($ * 100)
-[1,2,3,4,5] reduce (ele, acc=[]) -> if ((ele mod 2) == 0) acc ++ [(ele*100)] else acc
+[1,2,3,4,5] reduce (ele, acc=[]) -> if ((ele mod 2) == 0) acc + (ele*100) else acc
 
 
 
