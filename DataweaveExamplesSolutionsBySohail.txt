@@ -1,0 +1,401 @@
+*************************************************************************
+									MAP
+*************************************************************************
+1)
+[1,2,3,4,5]
+%dw 2.0
+output application/json
+---
+payload map(value, index) -> value+1
+
+***********
+***********
+2)
+[
+  { "id": 1, "name": "Archer" },
+  { "id": 2, "name": "Cyril"  },
+  { "id": 3, "name": "Pam"    }
+]
+
+%dw 2.0
+output application/json
+---
+payload map $-"name"
+***********
+***********
+3)
+[
+  { "name": "Archer" },
+  { "name": "Cyril"  },
+  { "name": "Pam"    }
+]
+
+%dw 2.0
+output application/json
+---
+payload map(value, index) -> {
+    id: index + 1, (value)
+}
+***********
+***********
+4) 
+
+[
+  { 
+    "name": "Archer",
+    "jobs": [
+      { "type": "developer" },
+      { "type": "investor"  },
+      { "type": "educator"  } 
+    ] 
+  },
+  {
+    "name": "Cyril",
+    "jobs": [
+      { "type": "developer"    },
+      { "type": "entrepreneur" },
+      { "type": "lion tamer"   }
+    ]
+  } 
+]
+
+%dw 2.0
+output application/json
+---
+payload map(value, index) -> {
+    num : index + 1,
+    name : value.name,
+    jobs : value.jobs map(value1,index1) -> {
+        num : index1 +1,
+        (value1)
+    }
+}
+*************************************************************************
+							FILTER	
+*************************************************************************
+
+1)
+
+[1,2,3,4,5]
+
+%dw 2.0
+output application/json
+---
+payload filter(value, index) -> isEven(value)
+
+
+%dw 2.0
+output application/json
+---
+payload filter ($ mod 2) == 0
+
+************
+************
+2)
+[1,2,3,4,5]
+
+%dw 2.0
+output application/json
+---
+payload filter(value, index) -> isOdd(index)
+
+************
+************
+3)
+[
+  {
+    "id": 1,
+    "status": "waiting"
+  },
+  {
+    "id": 2,
+    "status": "processed"
+  },
+  {
+    "id": 3,
+    "status": "waiting"
+  }
+]
+%dw 2.0
+output application/json
+---
+payload filter ($.status != "processed")
+
+************
+************
+4)
+[
+  "starting", 
+  "waiting", 
+  "deleted", 
+  "processing", 
+  "processed"
+]
+%dw 2.0
+output application/json
+---
+//payload filter $ != "processing" and $ !=  "deleted"
+payload filter !($ == "deleted" or $ =="processing")
+
+
+
+*************************************************************************
+							mapObject
+*************************************************************************
+
+
+1)
+{
+  "one":   "two",
+  "three": "four",
+  "five":  "six"
+}
+%dw 2.0
+output application/json
+---
+payload mapObject ($$) : upper($)
+
+************
+************
+
+2)
+{
+  "one":   "two",
+  "three": "four",
+  "five":  "six"
+}
+%dw 2.0
+output application/json
+---
+payload mapObject (upper($$)): $
+
+************
+************
+
+3)
+{
+  "one":   "two",
+  "three": null,
+  "five":  null
+}
+%dw 2.0
+output application/json
+---
+payload mapObject(v, k, i) ->
+    ((k):v) if (v != null)
+	
+*************************************************************************
+							Pluck
+*************************************************************************
+
+
+1)
+{
+  "one":   "two",
+  "three": "four",
+  "five":  "six"
+}
+%dw 2.0
+output application/json
+---
+payload pluck $
+
+************
+************
+
+2)
+{
+  "one":   "two",
+  "three": "four",
+  "five":  "six"
+}
+%dw 2.0
+output application/json
+---
+payload pluck $$
+
+************
+************
+
+3)
+{
+  "one":   "two",
+  "three": "four",
+  "five":  "six"
+}
+%dw 2.0
+output application/json
+---
+
+payload pluck {($$):$}
+
+************
+************
+
+4)
+{
+  "one":   "two",
+  "three": "four",
+  "five":  "six"
+}
+%dw 2.0
+output application/json
+---
+payload pluck [$$,$]
+
+*************************************************************************
+							GroupBy
+*************************************************************************
+
+[
+  2,4,6,5,7,8,1,3
+]
+
+%dw 2.0
+output application/json
+---
+(payload groupBy ($ mod 2) == 0) mapObject(v,k,i) -> if(k as String == "true") "Even": v else "Odd": v
+
+
+*************************************************************************
+							GroupBy Exercises
+*************************************************************************
+
+1)
+%dw 2.0
+output application/json
+var invoices = [
+  {
+    "invoiceId": 1,
+    "amount":    100 },
+  {
+    "invoiceId": 2,
+    "amount":    200 },
+  {
+    "invoiceId": 3,
+    "amount":    300 }]
+
+var allocations = [
+  {
+    "allocationId":     1,
+    "invoiceId":        1,
+    "allocationAmount": 50 },
+  {
+    "allocationId":     2,
+    "invoiceId":        1,
+    "allocationAmount": 50 },
+  {
+    "allocationId":     3,
+    "invoiceId":        2,
+    "allocationAmount": 100 },
+  {
+    "allocationId":     4,
+    "invoiceId":        2,
+    "allocationAmount": 100 },
+  {
+    "allocationId":     5,
+    "invoiceId":        3,
+    "allocationAmount": 150 },
+  {
+    "allocationId":     6,
+    "invoiceId":        3,
+    "allocationAmount": 150 }]
+var vAllocGroupByInvID = allocations groupBy $.invoiceId pluck $
+
+---
+invoices map (v,k) -> (v) ++ "allocations": flatten(vAllocGroupByInvID filter ($.invoiceId[0] == v.invoiceId))
+
+************
+************
+
+2)
+
+invoiceId,vendorName,total,lineItem,lineItemAmount
+1,Amazon,100,Sneakers,75
+1,Amazon,100,Shirt,25
+2,Walmart,38,Paper,10
+2,Walmart,38,Towel,28
+
+%dw 2.0
+output application/json
+
+var vGrpByInvId = payload groupBy $.invoiceId pluck $
+---
+(payload distinctBy $.invoiceId) map (v,k) -> ((v - "lineItem") - "lineItemAmount") ++ {
+    "lineItems": flatten(vGrpByInvId filter $.invoiceId[0] == v.invoiceId)
+}
+
+************
+************
+
+3)
+[
+  { "merchantName": "HelloFresh"    },
+  { "merchantName": "Amazon"        },
+  { "merchantName": "Walmart"       },
+  { "merchantName": "Guitar Center" }
+]
+
+%dw 2.0
+output application/json
+---
+payload groupBy sizeOf($.merchantName) < 10
+
+
+*************************************************************************
+							Reduce Exercises
+*************************************************************************
+
+6)
+[
+  {"dev":  1},
+  {"qa":   2},
+  {"prod": 3}
+]
+
+%dw 2.0
+output application/json
+---
+payload reduce (ele, acc={}) -> acc ++ ele
+
+
+7)
+%dw 2.0
+output application/json
+---
+//[1,2,3,4,5] filter (($ mod 2) == 0) map ($ * 100)
+[1,2,3,4,5] reduce (ele, acc=[]) -> if ((ele mod 2) == 0) acc ++ [(ele*100)] else acc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%dw 2.0
+output application/json
+var vKeyVal = {
+    "ONE" : 1,
+    "tWO":2,
+    "Three": 3
+}
+var payload1 = [1,10.1,5.4,999,2,3,]
+---
+//payload1 filter ($ as String != $ as String {format: "####"}) 
+//floor(10.4)
+//payload1 filter !($ contains ".")
+//(payload1 map (v,i) -> (vKeyVal mapObject (v1,k1,i1) -> if (v as String == v1 as String) ((k1): v1) else {})) reduce (ele, acc = []) -> acc ++ (ele pluck $$)
+(payload1 map (v,i) -> (vKeyVal mapObject (v1,k1,i1) -> ((k1): v1) if (v as String == v1 as String))) reduce (ele, acc = []) -> acc ++ (ele pluck $$)
+****************************************
