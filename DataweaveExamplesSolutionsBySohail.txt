@@ -381,11 +381,10 @@ output application/json
 
 
 
+Interview Puzzles
 
 
-
-
-
+1)
 %dw 2.0
 output application/json
 var vKeyVal = {
@@ -401,3 +400,74 @@ var payload1 = [1,10.1,5.4,999,2,3,]
 //(payload1 map (v,i) -> (vKeyVal mapObject (v1,k1,i1) -> if (v as String == v1 as String) ((k1): v1) else {})) reduce (ele, acc = []) -> acc ++ (ele pluck $$)
 (payload1 map (v,i) -> (vKeyVal mapObject (v1,k1,i1) -> ((k1): v1) if (v as String == v1 as String))) reduce (ele, acc = []) -> acc ++ (ele pluck $$)
 ****************************************
+
+2)
+%dw 2.0
+output application/json
+var inp1 = [
+    {"name": "Roger"    },
+    {"name": "Michael"    },
+    {"name": "Harris"    }
+]
+
+var out1 = [
+  {
+    "user1": "Roger"
+  },
+  {
+    "user2": "Michael"
+  },
+  {
+    "user3": "Harris"
+  }
+]
+var inp2 = {
+ "employees":[
+ {
+    "id": "2",
+    "name":"Anand"
+ },
+ {
+    "id": "1",
+    "name":"Vivek"
+ },
+ {
+    "id": "3",
+    "name":"Ismail"
+ }
+ ],
+ "departments":[
+ {
+    "dept":"dept1",
+    "ids" : ["1","3"]
+ },
+ {
+    "dept":"dept2",
+    "ids" : ["2"]
+ }
+ ]
+}
+
+var out2 = [
+  {
+    "id": "1",
+    "name": "Vivek",
+    "dept": "dept1"
+  },
+  {
+    "id": "2",
+    "name": "Anand",
+    "dept": "dept2"
+  },
+  {
+    "id": "3",
+    "name": "Ismail",
+    "dept": "dept1"
+  }
+]
+var vDepart = payload.departments
+---
+ inp1 map {
+    ("user" ++ $$ + 1): $.name
+} 
+/* inp2.employees map (v,i) -> {(v),"dept": ((payload.departments) filter ($.ids contains v.id)).dept[0]} */
